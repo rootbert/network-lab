@@ -23,14 +23,14 @@ is attached to. Just have a look in the nwlab.sh script where various bridges
 (brXX) are defined.
 The xml files should be stored into /etc/libvirt/qemu/ and libvirt-bin restarted.
 Then you need to edit the virtual disks of each virtual machine, e.g with "virsh edit nwlab01"
-you need to adjust the "source file" according to where the images are located: '''
+you need to adjust the "source file" according to where the images are located: ``` 
 <disk type='file' device='disk'>
       <driver name='qemu' type='raw'/>
       <source file='/mnt/750/vm/nwlab01.img'/>
       <target dev='vda' bus='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
     </disk>
-'''
+```
 (in my case they are located under /mnt/750/vm/)
 The packages "libvirt-bin uml-utilities bridge-utils" are needed, the script checks for
 this and installs them
