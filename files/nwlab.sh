@@ -42,11 +42,34 @@ ib1=br15
 #which is the bridge to the hosts network? - this one wont be created or deleted:
 hb1=br0
 
+# Lockfile - no one wants to start this script more than once ;-)
+LOCKFILE=/tmp/.nwlab.sh.lock
 
 # tap interfaces - naming conventions: first 2 chars are the host, second pair is eth interface number
 # so e.g. 0301 is host nwlab03 - interface eth1
 tapinterfaces="0100   0101   0102   0103   0200   0201   0202   0300   0301   0400   0401   0500   0600   0700   0800   0900   1000   1100   1200"
 interfacemaps=("$hb1" "$pb2" "$pb3" "$pb1" "$ib1" "$pb1" "$db1" "$db2" "$pb2" "$db3" "$pb3" "$ib1" "$db1" "$db2" "$db2" "$db2" "$db3" "$db3" "$db3")
+
+lock() {
+if [ -f $LOCKFILE ]
+then
+        echo "script is being executed or aborted, remove " "$LOCKFILE"
+        echo "oder wurde abgebrochen!"
+        exit 1
+fi
+
+touch $LOCKFILE
+if [ "$?" -ne "0" ]
+    then
+        echo "Error creating lockfile"
+	exit 1
+fi
+}
+
+unlock() {
+	rm $LOCKFILE
+}
+
 
 act() {
   if [[ $debug ]] ; then
@@ -60,7 +83,7 @@ prepare() {
 # we need libvirt-bin, uml-utilities and bridge-utils for the commands virsh, tunctl and brctl
 for i in libvirt-bin uml-utilities bridge-utils; do
 	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $i|grep "install ok installed")
-	echo Checking for $i : $PKG_OK
+	act echo Checking for $i : $PKG_OK
 	if [ "" == "$PKG_OK" ]; then
 	  echo "No $i - installing"
 	  apt-get install $i
@@ -156,14 +179,18 @@ stop() {
 
 case "$1" in
 start)
+	lock
 	prepare
 	startleafes
 	startrouter
 	startswitches
+	unlock
 	;;
 router)
+	lock
 	prepare
 	startrouter
+	unlock
 	;;
 prepare)
 	prepare
