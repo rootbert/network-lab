@@ -45,10 +45,6 @@ hb1=br0
 # Lockfile - no one wants to start this script more than once ;-)
 LOCKFILE=/tmp/.nwlab.sh.lock
 
-# tap interfaces - naming conventions: first 2 chars are the host, second pair is eth interface number
-# so e.g. 0301 is host nwlab03 - interface eth1
-tapinterfaces="0100   0101   0102   0103   0200   0201   0202   0300   0301   0400   0401   0500   0600   0700   0800   0900   1000   1100   1200"
-interfacemaps=("$hb1" "$pb2" "$pb3" "$pb1" "$ib1" "$pb1" "$db1" "$db2" "$pb2" "$db3" "$pb3" "$ib1" "$db1" "$db2" "$db2" "$db2" "$db3" "$db3" "$db3")
 
 lock() {
 if [ -f $LOCKFILE ]
@@ -80,8 +76,8 @@ act() {
 }
 
 prepare() {
-# we need libvirt-bin, uml-utilities and bridge-utils for the commands virsh, tunctl and brctl
-for i in libvirt-bin uml-utilities bridge-utils; do
+# we need libvirt-bin and bridge-utils for the commands virsh  and brctl
+for i in libvirt-bin bridge-utils; do
 	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $i|grep "install ok installed")
 	act echo Checking for $i : $PKG_OK
 	if [ "" == "$PKG_OK" ]; then
@@ -93,21 +89,9 @@ done
 for i in $pb1 $pb2 $pb3 $db1 $db2 $db3 $ib1; do
 		act brctl addbr $i
 		act ifconfig $i up
-        done
-
-j=0
-
-for i in $tapinterfaces; do
-	hostn=${i::2}
-	iface=${i:2:2}
-	mappedbridge=${interfacemaps[j]}
-	act echo "host: $hostn - interface: $iface maps to $mappedbridge"
-	act echo "tunctl -t tap$i && ifconfig tap$i up && brctl addif $mappedbridge tap$i"
-	act tunctl -t tap$i
-	act brctl addif $mappedbridge tap$i
-	act ifconfig tap$i up
-	j=$((j+1))	
 done
+
+
 
 }
 
@@ -157,20 +141,6 @@ stop() {
 			[ $info == 1 ] && [ $retval == 0 ] && echo "shutdown of nwlab""$i"" successful"
 		fi
 	done
-	k=1
-	for i in $tapinterfaces; do
-        	hostn=${i::2}
-        	iface=${i:2:2}
-	        mappedbridge=${interfacemaps[k]}
-        	act echo "nwlab""$hostn"" - interface: ""$iface"" maps to ""$mappedbridge"
-	        act echo "ifconfig tap"$i" down; brctl delif "$mappedbridge" tap"$i"; tunctl -d tap"$i""
-	
-		act ifconfig tap$i down
-		act brctl delif $mappedbridge tap$i
-	        act tunctl -d tap$i
-
-	        k=$((k+1))
-	done
 	for i in $pb1 $pb2 $pb3 $db1 $db2 $db3 $ib1; do
 		act ifconfig $i down
                 act brctl delbr $i
@@ -211,7 +181,7 @@ status)
 *)
         echo "Usage: $0 [stop|start|status|router|prepare]"
 	echo ""
-	echo "stop - stops all machines, removes the tap devices and bridges"
+	echo "stop - stops all machines, removes the bridges"
 	echo "status - print status about bridges + vms"
 	echo "router - only start router for testing which should be reachable from the host"
 	echo "prepare - just prepare the bridges, you have to start the vms manually"
