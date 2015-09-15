@@ -15,8 +15,12 @@ user: nwlabadmin
 
 password: nwlabadmin
 
+All the VMs use the same ssh-keys, and root/nwlabadmin can login on all machines
+as user nwlabadmin/root.
+
 ## Info
-Images will follow as soon as I have a site to upload them (12 x 520MB).
+The VM images are located at https://drive.google.com/folderview?id=0B85sUdZ8VkHqSGRZYjl1cUtnaHM&usp=sharing
+(~600 MB each)
 The direcotry "files" contains the xml-files for libvirt-bin, the network-lab.odg 
 which reflects the lab in a graphic way and the nwlab.sh which starts or stops 
 the whole lab.
